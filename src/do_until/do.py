@@ -1,15 +1,19 @@
 """do-until, a CLI tool to run a command until a specified time."""
 
 import datetime
+import selectors
 import shlex
 import subprocess
 import sys
 import time
+from typing import Any
 
 import click
+from rich.console import Console
 from rich.progress import Progress  # Added import
 
 TZ: datetime.tzinfo = datetime.UTC
+console = Console(highlight=False)
 
 
 def run_cmd(
@@ -26,16 +30,8 @@ def run_cmd(
         sys.exit(1)
 
     total_time = (stop_at.astimezone(TZ) - datetime.datetime.now(TZ)).total_seconds()
-    with Progress(
-        transient=True,  # hide the progress line after it's done.
-    ) as progress:
+    with Progress(transient=True, console=console) as progress:
         update_progress(process, progress, stop_at, total_time, pretty_cmd)
-
-    stdout, stderr = process.communicate()
-    if stdout:
-        click.echo(stdout)
-    if stderr:
-        click.echo(stderr)
 
 
 def update_progress(
@@ -50,15 +46,35 @@ def update_progress(
         f'[green]Running: [bold]"{pretty_cmd}"',
         total=total_time,
     )
+    pp: Any = progress.console.print
+
+    selector = selectors.DefaultSelector()
+    # Register process.stdout and process.stderr with the selector
+    if process.stdout:
+        selector.register(process.stdout, selectors.EVENT_READ)
+    if process.stderr:
+        selector.register(process.stderr, selectors.EVENT_READ)
+
     now = datetime.datetime.now(TZ)
     while now < stop_at:
         if process.poll() is not None:  # Check if the process has already exited
             progress.stop()
             break
+
+        # Check for readable events
+        for key, _ in selector.select(timeout=0.1):
+            line = key.fileobj.readline()
+            if line:
+                if key.fileobj is process.stdout:
+                    pp(line.strip())  # Print stdout in green
+                elif key.fileobj is process.stderr:
+                    pp(f"[red]{line.strip()}")  # Print stderr in red
+
         elapsed = (
             now - (stop_at - datetime.timedelta(seconds=total_time))
         ).total_seconds()
         progress.update(task, completed=elapsed)
+
         time.sleep(0.5)  # Sleep briefly to avoid busy-waiting
         now = datetime.datetime.now(TZ)
 
