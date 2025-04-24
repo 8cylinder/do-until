@@ -60,4 +60,7 @@ def main(time: str, command: tuple[str, ...]) -> None:
         click.secho('Try using "in", for example "in 1h".', fg="red")
         sys.exit()
 
-    run_cmd(command, stop_at)
+    try:
+        run_cmd(command, stop_at)
+    except KeyboardInterrupt:  # suppress the "Aborted!" message
+        sys.exit(0)
