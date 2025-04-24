@@ -10,7 +10,7 @@ from typing import Any
 
 import click
 from rich.console import Console
-from rich.progress import Progress  # Added import
+from rich.progress import Progress
 
 TZ: datetime.tzinfo = datetime.UTC
 console = Console(highlight=False)
@@ -43,7 +43,7 @@ def update_progress(
 ) -> None:
     """Update the progress bar until the specified time."""
     task = progress.add_task(
-        f'[green]Running: [bold]"{pretty_cmd}"',
+        f"[green]▶ {pretty_cmd}",
         total=total_time,
     )
     pp: Any = progress.console.print
@@ -61,7 +61,7 @@ def update_progress(
             progress.stop()
             break
 
-        # Check for readable events
+        # Check command output
         for key, _ in selector.select(timeout=0.1):
             line = key.fileobj.readline()
             if line:
