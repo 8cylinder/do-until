@@ -29,8 +29,10 @@ def main(time: str, command: tuple[str, ...]) -> None:
     TIME is a time specification, e.g,
       "in 1h",
       "5s",
+      "1m 10s",
       "tomorrow 10:00",
-      "2023-10-01 12:00"
+      "tomorrow at 9:00am",
+      "2050-10-01 12:00"
 
     COMMAND is the command to run, e.g. "echo hello world".
 
@@ -41,12 +43,14 @@ def main(time: str, command: tuple[str, ...]) -> None:
 
     \b
     do-until "in 1h" -- echo hello world -h
+
     """  # noqa: D301
     now = datetime.datetime.now(TZ)
 
+    tz = datetime.datetime.now(TZ).tzname()
     dateparser_settings = {
         "PREFER_DATES_FROM": "future",
-        "TIMEZONE": "UTC",
+        "TIMEZONE": tz,
         "TO_TIMEZONE": "UTC",
         "RETURN_AS_TIMEZONE_AWARE": True,
     }

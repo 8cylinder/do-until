@@ -12,7 +12,7 @@ import click
 from rich.console import Console
 from rich.progress import Progress
 
-TZ: datetime.tzinfo = datetime.UTC
+TZ: datetime.tzinfo | None = datetime.datetime.now().astimezone().tzinfo
 console = Console(highlight=False)
 
 
