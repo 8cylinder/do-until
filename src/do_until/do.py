@@ -59,16 +59,16 @@ def update_progress(
     while now < stop_at:
         if process.poll() is not None:  # Check if the process has already exited
             progress.stop()
+            click.secho(
+                "Process terminated before timer was reached.",
+                fg="yellow",
+            )
             break
 
         # Check command output
         for key, _ in selector.select(timeout=0.1):
             line = key.fileobj.readline()
-            if line:
-                if key.fileobj is process.stdout:
-                    pp(line.strip())  # Print stdout in green
-                elif key.fileobj is process.stderr:
-                    pp(f"[red]{line.strip()}")  # Print stderr in red
+            print(line.strip())
 
         elapsed = (
             now - (stop_at - datetime.timedelta(seconds=total_time))
@@ -77,13 +77,13 @@ def update_progress(
 
         time.sleep(0.5)  # Sleep briefly to avoid busy-waiting
         now = datetime.datetime.now(TZ)
-
-    process.terminate()  # Terminate the process if the time is up
-    progress.stop()
-    click.secho(
-        "Process terminated as the specified time was reached.",
-        fg="yellow",
-    )
+    else:
+        process.terminate()  # Terminate the process if the time is up
+        progress.stop()
+        click.secho(
+            "Process terminated as the specified time was reached.",
+            fg="yellow",
+        )
 
 
 def get_process(split_cmd: list[str]) -> subprocess.Popen[str]:
